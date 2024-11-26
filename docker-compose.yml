@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: ./Backend
+    volumes:
+      - ./Backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+    depends_on:
+      - frontend
+
+  frontend:
+    build:
+      context: ./Frontend
+    volumes:
+      - ./Frontend:/app
+    ports:
+      - "3000:3000"
+
