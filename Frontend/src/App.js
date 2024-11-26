@@ -47,6 +47,7 @@ function App() {
             <Header />
             <div className="container">
                 <Routes>
+                    <Route path="/" element={<Login />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/notes" element={<Notes />} />

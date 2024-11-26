@@ -10,8 +10,9 @@ const EditProfileAndPassword = () => {
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [message, setMessage] = useState("");
+    const [error, setError] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    
     useEffect(() => {
         const fetchProfile = async () => {
             try {
@@ -23,16 +24,19 @@ const EditProfileAndPassword = () => {
                 });
                 setProfile(response.data);
             } catch (error) {
-                alert("Failed to fetch profile information.");
+                setError("Failed to fetch profile information.");
             }
         };
 
         fetchProfile();
     }, []);
 
-    
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setMessage("");
+        setError("");
+
         try {
             const token = localStorage.getItem("access_token");
             await axios.patch(
@@ -46,13 +50,18 @@ const EditProfileAndPassword = () => {
             );
             setMessage("Profile updated successfully!");
         } catch (error) {
-            alert("Failed to update profile.");
+            setError("Failed to update profile.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    
     const handleChangePassword = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setMessage("");
+        setError("");
+
         try {
             const token = localStorage.getItem("access_token");
             await axios.post(
@@ -71,72 +80,110 @@ const EditProfileAndPassword = () => {
             setOldPassword("");
             setNewPassword("");
         } catch (error) {
-            alert(
+            setError(
                 error.response?.data?.old_password?.[0] ||
                 error.response?.data?.new_password?.[0] ||
                 "Failed to update password."
             );
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="card p-4">
-            <h2>Edit Profile</h2>
-            {message && <div className="alert alert-success">{message}</div>}
-            
-            <form onSubmit={handleUpdateProfile}>
-                <div className="mb-3">
-                    <label className="form-label">Username</label>
-                    <input
-                        type="text"
-                        className="form-control"
-                        value={profile.username}
-                        onChange={(e) =>
-                            setProfile({ ...profile, username: e.target.value })
-                        }
-                    />
-                </div>
-                <div className="mb-3">
-                    <label className="form-label">Email</label>
-                    <input
-                        type="email"
-                        className="form-control"
-                        value={profile.email}
-                        onChange={(e) =>
-                            setProfile({ ...profile, email: e.target.value })
-                        }
-                    />
-                </div>
-                <button type="submit" className="btn btn-primary mb-4">
-                    Update Profile
-                </button>
-            </form>
+        <div className="container mt-4">
+            <div className="row justify-content-center">
+                <div className="col-md-6">
+                    <div className="card p-4 shadow">
+                        <h2 className="text-center">Edit Profile</h2>
+                        {message && <div className="alert alert-success">{message}</div>}
+                        {error && <div className="alert alert-danger">{error}</div>}
 
-            <h2>Change Password</h2>
-            
-            <form onSubmit={handleChangePassword}>
-                <div className="mb-3">
-                    <label className="form-label">Old Password</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        value={oldPassword}
-                        onChange={(e) => setOldPassword(e.target.value)}
-                    />
+                        <form onSubmit={handleUpdateProfile}>
+                            <div className="mb-3">
+                                <label className="form-label">Username</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={profile.username}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, username: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Email</label>
+                                <input
+                                    type="email"
+                                    className="form-control"
+                                    value={profile.email}
+                                    onChange={(e) =>
+                                        setProfile({ ...profile, email: e.target.value })
+                                    }
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="btn btn-primary w-100"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <span
+                                        className="spinner-border spinner-border-sm me-2"
+                                        role="status"
+                                        aria-hidden="true"
+                                    ></span>
+                                ) : (
+                                    "Update Profile"
+                                )}
+                            </button>
+                        </form>
+                    </div>
+
+                    <div className="card p-4 shadow mt-4">
+                        <h2 className="text-center">Change Password</h2>
+                        <form onSubmit={handleChangePassword}>
+                            <div className="mb-3">
+                                <label className="form-label">Old Password</label>
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    value={oldPassword}
+                                    onChange={(e) => setOldPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">New Password</label>
+                                <input
+                                    type="password"
+                                    className="form-control"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                className="btn btn-primary w-100"
+                                disabled={loading}
+                            >
+                                {loading ? (
+                                    <span
+                                        className="spinner-border spinner-border-sm me-2"
+                                        role="status"
+                                        aria-hidden="true"
+                                    ></span>
+                                ) : (
+                                    "Update Password"
+                                )}
+                            </button>
+                        </form>
+                    </div>
                 </div>
-                <div className="mb-3">
-                    <label className="form-label">New Password</label>
-                    <input
-                        type="password"
-                        className="form-control"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                    />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                    Update Password
-                </button>
-            </form>
+            </div>
         </div>
     );
 };

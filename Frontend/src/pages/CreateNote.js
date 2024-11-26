@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
 
-
-
 const CreateNote = () => {
     const API_URL = process.env.REACT_APP_API;
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [audioBlob, setAudioBlob] = useState(null);
     const [isRecording, setIsRecording] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState("");
     const mediaRecorder = React.useRef(null);
     const audioChunks = React.useRef([]);
     const { id } = useParams();
@@ -18,6 +18,7 @@ const CreateNote = () => {
     useEffect(() => {
         if (id) {
             const fetchNote = async () => {
+                setLoading(true);
                 try {
                     const token = localStorage.getItem("access_token");
                     const response = await axios.get(
@@ -31,7 +32,9 @@ const CreateNote = () => {
                     setTitle(response.data.title);
                     setDescription(response.data.description);
                 } catch (error) {
-                    alert("Failed to fetch the note.");
+                    setMessage("Failed to fetch the note.");
+                } finally {
+                    setLoading(false);
                 }
             };
 
@@ -57,17 +60,21 @@ const CreateNote = () => {
             mediaRecorder.current.start();
             setIsRecording(true);
         } catch (error) {
-            alert("Error accessing the microphone.");
+            setMessage("Error accessing the microphone.");
         }
     };
 
     const stopRecording = () => {
-        mediaRecorder.current.stop();
-        setIsRecording(false);
+        if (mediaRecorder.current) {
+            mediaRecorder.current.stop();
+            setIsRecording(false);
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
+        setMessage("");
         const token = localStorage.getItem("access_token");
         const formData = new FormData();
         formData.append("title", title);
@@ -83,24 +90,31 @@ const CreateNote = () => {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                alert("Note updated successfully!");
+                setMessage("Note updated successfully!");
             } else {
                 await axios.post(`${API_URL}/notes/`, formData, {
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
                 });
-                alert("Note created successfully!");
+                setMessage("Note created successfully!");
             }
             navigate("/notes");
         } catch (error) {
-            alert("Failed to save the note.");
+            setMessage("Failed to save the note.");
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
         <div className="container mt-4">
             <h1>{id ? "Edit Note" : "Create Note"}</h1>
+            {message && (
+                <div className={`alert ${message.includes("successfully") ? "alert-success" : "alert-danger"}`}>
+                    {message}
+                </div>
+            )}
             <form onSubmit={handleSubmit}>
                 <div className="mb-3">
                     <label className="form-label">Title</label>
@@ -132,10 +146,23 @@ const CreateNote = () => {
                         </button>
                     )}
                 </div>
-                {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} />}
-                <button type="submit" className="btn btn-success mt-3">
-                    Save Note
-                </button>
+                {audioBlob && <audio controls src={URL.createObjectURL(audioBlob)} className="w-100"></audio>}
+                <div className="d-flex justify-content-between mt-4">
+                    <button type="submit" className="btn btn-success" disabled={loading}>
+                        {loading ? (
+                            <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                                aria-hidden="true"
+                            ></span>
+                        ) : (
+                            "Save Note"
+                        )}
+                    </button>
+                    <button type="button" className="btn btn-secondary" onClick={() => navigate("/notes")}>
+                        Cancel
+                    </button>
+                </div>
             </form>
         </div>
     );
